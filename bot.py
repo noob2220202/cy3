@@ -74,7 +74,15 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         if topic:
             kwargs["message_thread_id"] = topic
-        await context.bot.forward_message(**kwargs)
+        try:
+            await context.bot.forward_message(**kwargs)
+        except Exception as e:
+            if topic and "thread" in str(e).lower():
+                # General 토픽(ID=1) 등 thread 없이 전송 재시도
+                kwargs.pop("message_thread_id", None)
+                await context.bot.forward_message(**kwargs)
+            else:
+                raise
         await context.bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
     except Exception as e:
         logger.error("Photo forward/delete error: %s", e)
